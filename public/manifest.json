@@ -1,0 +1,27 @@
+{
+    "name": "Wallet Slip",
+    "short_name": "WalletSlip",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4f46e5",
+    "description": "A simple and elegant progressive web app for tracking your expenses.",
+    "icons": [
+    {
+        "src": "wallet_64.png",
+        "sizes": "64x64",
+        "type": "image/png"
+    },
+    {
+        "src": "wallet_128.png",
+        "sizes": "128x128",
+        "type": "image/png"
+    },
+    {
+        "src": "wallet_512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+    }
+    ]
+}
+
