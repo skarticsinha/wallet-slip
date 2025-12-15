@@ -1,0 +1,364 @@
+import { useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Calendar } from "./ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
+import { Card, CardContent } from "./ui/card";
+import { ShoppingBag, Utensils, Car, Home, Zap, Heart, ShoppingCart, GraduationCap, Upload, CalendarIcon, X, FileText, ChevronDown, ChevronUp, Plus, TrendingDown } from "lucide-react";
+import { format } from "date-fns";
+import { IconPicker } from "./IconPicker";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+
+interface AddExpenseSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const defaultCategories = [
+  { id: "groceries", label: "Groceries", icon: ShoppingCart, image: null, color: "bg-blue-100", textColor: "text-blue-600" },
+  { id: "food", label: "Food & Dining", icon: Utensils, image: null, color: "bg-orange-100", textColor: "text-orange-600" },
+  { id: "transport", label: "Transport", icon: Car, image: null, color: "bg-purple-100", textColor: "text-purple-600" },
+  { id: "rent", label: "Rent", icon: Home, image: null, color: "bg-green-100", textColor: "text-green-600" },
+  { id: "bills", label: "Bills & Utilities", icon: Zap, image: null, color: "bg-yellow-100", textColor: "text-yellow-600" },
+  { id: "health", label: "Healthcare", icon: Heart, image: null, color: "bg-red-100", textColor: "text-red-600" },
+  { id: "shopping", label: "Shopping", icon: ShoppingBag, image: null, color: "bg-pink-100", textColor: "text-pink-600" },
+  { id: "education", label: "Education", icon: GraduationCap, image: null, color: "bg-indigo-100", textColor: "text-indigo-600" },
+];
+
+// Helper function for currency conversion rates (INR to other currencies)
+const getCurrencyRate = (currency: string): number => {
+  const rates: { [key: string]: number } = {
+    INR: 1,
+    USD: 83.5,
+    EUR: 93,
+    GBP: 105,
+    JPY: 0.56,
+  };
+  return rates[currency] || 1;
+};
+
+export function AddExpenseSheet({ open, onOpenChange }: AddExpenseSheetProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [amount, setAmount] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState<Date>(new Date());
+  const [note, setNote] = useState("");
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [customCategories, setCustomCategories] = useState<Array<{ id: string; label: string; icon: any; image: string | null; color: string; textColor: string }>>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState<any>(ShoppingBag);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedCurrency, setSelectedCurrency] = useState("INR");
+
+  const allCategories = [...defaultCategories, ...customCategories];
+  const visibleCategories = showAllCategories ? allCategories : allCategories.slice(0, 8);
+
+  const handleAddAttachment = () => {
+    // Simulate file upload
+    setAttachments([...attachments, `attachment-${attachments.length + 1}.jpg`]);
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      setCustomCategories([
+        ...customCategories,
+        {
+          id: newCategoryName.toLowerCase().replace(/\s+/g, "-"),
+          label: newCategoryName,
+          icon: selectedIcon,
+          image: selectedImage,
+          color: "bg-teal-100",
+          textColor: "text-teal-600",
+        },
+      ]);
+      setNewCategoryName("");
+      setShowAddCategory(false);
+    }
+  };
+
+  const handleSave = () => {
+    // Handle save logic
+    console.log({ selectedCategory, amount, title, date, note, attachments });
+    onOpenChange(false);
+  };
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 border-t-4 border-t-red-500">
+          {/* Header with gradient */}
+          <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-red-50 via-orange-50 to-pink-50 border-b">
+            <SheetHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 rounded-full bg-red-100">
+                  <TrendingDown className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <SheetTitle className="text-2xl">Add Expense</SheetTitle>
+                  <SheetDescription className="text-sm">
+                    Track your spending with details
+                  </SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+          </div>
+
+          <div className="px-6 space-y-5 py-6 overflow-y-auto max-h-[calc(90vh-250px)] hide-scrollbar">
+            {/* Amount Input with Currency Selector */}
+            <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 shadow-sm">
+              <CardContent className="p-4 space-y-3">
+                <Label className="text-red-900">Amount *</Label>
+                <div className="flex gap-2">
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger className="w-24 bg-white border-red-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INR">₹ INR</SelectItem>
+                      <SelectItem value="USD">$ USD</SelectItem>
+                      <SelectItem value="EUR">€ EUR</SelectItem>
+                      <SelectItem value="GBP">£ GBP</SelectItem>
+                      <SelectItem value="JPY">¥ JPY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="h-14 text-2xl font-semibold bg-white border-red-200"
+                    />
+                  </div>
+                </div>
+                {selectedCurrency !== "INR" && amount && (
+                  <p className="text-sm text-red-700">
+                    ≈ ₹{(parseFloat(amount) * getCurrencyRate(selectedCurrency)).toLocaleString('en-IN', { maximumFractionDigits: 2 })} INR
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                placeholder="e.g., Grocery Shopping"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-12"
+              />
+            </div>
+
+            {/* Category Selection */}
+            <div className="space-y-3">
+              <Label>Category *</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {visibleCategories.map((category) => {
+                  const Icon = category.icon;
+                  const isSelected = selectedCategory === category.id;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${
+                        isSelected
+                          ? `${category.color} ring-2 ring-offset-2 ${category.textColor.replace('text-', 'ring-')} shadow-md scale-105`
+                          : "bg-muted hover:bg-muted/80"
+                      }`}
+                    >
+                      <div className={`p-2 rounded-full ${isSelected ? 'bg-white/80' : category.color}`}>
+                        <Icon className={`h-4 w-4 ${isSelected ? category.textColor : category.textColor}`} />
+                      </div>
+                      <span className={`text-xs text-center leading-tight ${isSelected ? category.textColor : 'text-muted-foreground'}`}>
+                        {category.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Show More/Less and Add Category buttons */}
+              <div className="flex gap-2">
+                {allCategories.length > 8 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setShowAllCategories(!showAllCategories)}
+                  >
+                    {showAllCategories ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Show More ({allCategories.length - 8})
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-dashed"
+                  onClick={() => setShowAddCategory(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Category
+                </Button>
+              </div>
+            </div>
+
+            {/* Date Picker */}
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start h-12 bg-muted/50">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(date, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(newDate) => {
+                      if (newDate) {
+                        setDate(newDate);
+                        setShowCalendar(false);
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Note */}
+            <div className="space-y-2">
+              <Label htmlFor="note">Note (Optional)</Label>
+              <Textarea
+                id="note"
+                placeholder="Add any additional details..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Attachments */}
+            <div className="space-y-2 pb-4">
+              <Label>Attachments</Label>
+              <div className="space-y-2">
+                {attachments.map((attachment, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-blue-100">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="flex-1 text-sm">{attachment}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                          onClick={() => handleRemoveAttachment(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed h-12"
+                  onClick={handleAddAttachment}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Add Attachment
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-background border-t space-y-2">
+            <Button 
+              className="w-full h-12 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-md" 
+              onClick={handleSave} 
+              disabled={!amount || !selectedCategory || !title}
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Add Expense
+            </Button>
+            <Button variant="outline" className="w-full h-12" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Add Category Dialog */}
+      <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Custom Category</DialogTitle>
+            <DialogDescription>
+              Create a new category for your expenses
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="category-name">Category Name</Label>
+              <Input
+                id="category-name"
+                placeholder="e.g., Entertainment, Pets, Travel"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddCategory();
+                  }
+                }}
+              />
+            </div>
+            <IconPicker
+              selectedIcon={selectedIcon}
+              selectedImage={selectedImage}
+              onSelectIcon={setSelectedIcon}
+              onSelectImage={setSelectedImage}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCategory(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddCategory} disabled={!newCategoryName.trim()}>
+              Add Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
