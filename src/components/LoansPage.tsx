@@ -44,7 +44,7 @@ export function LoansPage({ onBack, loans, onAddLoan }: LoansPageProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "paid":
+      case "completed":
         return "bg-green-100 text-green-700";
       case "partial":
         return "bg-orange-100 text-orange-700";
@@ -231,12 +231,12 @@ export function LoansPage({ onBack, loans, onAddLoan }: LoansPageProps) {
                               {loan.type === "lent" ? "+" : "-"}₹{remaining.toLocaleString('en-IN')}
                             </div>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(loan.status)}`}>
-                              {loan.status === "paid" ? "Paid" : loan.status === "partial" ? "Partial" : "Pending"}
+                              {loan.status === "completed" ? "Completed" : loan.status === "partial" ? "Partial" : "Pending"}
                             </span>
                           </div>
                         </div>
 
-                        {loan.status !== "paid" && (
+                        {loan.status !== "completed" && (
                           <div className="mt-3">
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                               <span>₹{loan.paidAmount.toLocaleString('en-IN')} paid</span>

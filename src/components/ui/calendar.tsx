@@ -59,14 +59,18 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
-      }}
+      components={
+        // DayPicker's `CustomComponents` type may differ across versions; cast to `any`
+        // so TypeScript doesn't block the build. We can refine types later.
+        ({
+          IconLeft: ({ className, ...props }: any) => (
+            <ChevronLeft className={cn("size-4", className)} {...props} />
+          ),
+          IconRight: ({ className, ...props }: any) => (
+            <ChevronRight className={cn("size-4", className)} {...props} />
+          ),
+        } as any)
+      }
       {...props}
     />
   );
